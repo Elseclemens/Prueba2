@@ -46,6 +46,11 @@
                     precio: parseFloat(productElement.querySelector('precio')?.textContent) || 0,
                     caducidad: productElement.querySelector('caducidad')?.textContent || null
                 }));
+            } catch (error) {
+                // console.error('Error al cargar o parsear el XML:', error); // Esto es útil para depuración, pero no para el usuario final.
+                productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos XML.</p>';
+                return;
+            }
 
             const filtrados = productos.filter(p => p.categoria === categoriaSeleccionada);
 
