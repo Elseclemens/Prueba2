@@ -21,10 +21,6 @@
 
     <p id="resultado">Seleccionado: Nada</p>
 
-    <div id="productosContainer">
-        <p>No hay datos cargados todavía.</p>
-    </div>
-
     <script>
         async function mostrarSeleccion() {
             const categoriaSeleccionada = document.getElementById('opciones').value;
@@ -50,11 +46,6 @@
                     precio: parseFloat(productElement.querySelector('precio')?.textContent) || 0,
                     caducidad: productElement.querySelector('caducidad')?.textContent || null
                 }));
-            } catch (error) {
-                console.error('Error al cargar o parsear el XML:', error);
-                productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos XML.</p>';
-                return;
-            }
 
             const filtrados = productos.filter(p => p.categoria === categoriaSeleccionada);
 
