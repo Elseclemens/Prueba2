@@ -21,6 +21,9 @@
 
     <p id="resultado">Seleccionado: Nada</p>
 
+    <div id="productosContainer">
+        <p>No hay datos cargados todavía.</p> </div>
+
     <script>
         async function mostrarSeleccion() {
             const categoriaSeleccionada = document.getElementById('opciones').value;
@@ -32,8 +35,8 @@
 
             try {
                 const responseXML = await fetch('productos.xml');
-                    if (!responseXML.ok)
-                        throw new Error("Error al cargar el archivo XML");
+                if (!responseXML.ok)
+                    throw new Error("Error al cargar el archivo XML");
                 const xmlText = await responseXML.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "text/xml");
