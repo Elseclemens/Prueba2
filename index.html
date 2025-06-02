@@ -3,76 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supermercado Alba</title>
-    <link rel="stylesheet" href="style.css"> 
+    <title>Análisis de Productos - Supermercado Alba</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Análisis de Productos por Categoría</h1>
-    <p>Selecciona para ver los productos disponibles.</p>
+    <div class="container">
+        <h1>Análisis de Productos por Categoría</h1>
+        <p>Selecciona una categoría para ver los productos disponibles.</p>
 
-    <label for="opciones">Selecciona una categoría:</label>
-    <select id="opciones">
-        <option value="Congelados">Congelados</option>
-        <option value="Fruta">Fruta</option>
-        <option value="Verdura">Verduras</option> 
-        <option value="Bebidas">Bebidas</option>
-    </select>
-    <button onclick="mostrarSeleccion()">Seleccionar</button>
+        <div class="form-group">
+            <label for="categoria">Selecciona una categoría:</label>
+            <select id="categoria">
+                <option value="Congelados">Congelados</option>
+                <option value="Fruta">Fruta</option>
+                <option value="Verdura">Verduras</option> 
+                <option value="Bebidas">Bebidas</option>
+            </select>
+            <button id="seleccionarBtn">Seleccionar</button>
+        </div>
 
-    <p id="resultado">Seleccionado: Nada</p>
-
-    <div id="productosContainer">
-        <p>No hay datos cargados todavía.</p> </div>
+        <div class="data-display">
+            <h2>Productos de la Categoría Seleccionada:</h2>
+            <div id="productosContainer">
+                <p>No hay datos cargados todavía.</p>
+            </div>
+        </div>
+    </div>
 
     <script>
-        async function mostrarSeleccion() {
-            const categoriaSeleccionada = document.getElementById('opciones').value;
-            document.getElementById('resultado').textContent = "Seleccionado: " + categoriaSeleccionada;
-
+        document.addEventListener('DOMContentLoaded', () => {
+            const categoriaSelect = document.getElementById('categoria');
+            const seleccionarBtn = document.getElementById('seleccionarBtn');
             const productosContainer = document.getElementById('productosContainer');
-            let datosHTML = '';
-            let productos = [];
 
-            try {
-                const responseXML = await fetch('productos.xml');
-                if (!responseXML.ok)
-                    throw new Error("Error al cargar el archivo XML");
-                const xmlText = await responseXML.text();
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-
-                productos = Array.from(xmlDoc.querySelectorAll('producto')).map(productElement => ({
-                    categoria: productElement.getAttribute('categoria'),
-                    nombre: productElement.querySelector('nombre')?.textContent || '',
-                    peso: parseFloat(productElement.querySelector('peso')?.textContent) || null,
-                    volumen: parseFloat(productElement.querySelector('volumen')?.textContent) || null,
-                    precio: parseFloat(productElement.querySelector('precio')?.textContent) || 0,
-                    caducidad: productElement.querySelector('caducidad')?.textContent || null
-                }));
-            } catch (error) {
-                // console.error('Error al cargar o parsear el XML:', error); // Esto es útil para depuración, pero no para el usuario final.
-                productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos XML.</p>';
-                return;
+            // Función para cargar y procesar datos XML
+            async function loadXMLData() {
+                try {
+                    const response = await fetch('productos.xml');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const xmlText = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                    return xmlDoc;
+                } catch (error) {
+                    console.error('Error al cargar o parsear el XML:', error);
+                    productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos XML. Asegúrate de que el archivo productos.xml existe.</p>';
+                    return null;
+                }
             }
 
-            const filtrados = productos.filter(p => p.categoria === categoriaSeleccionada);
+            // Función para cargar y procesar datos JSON
+            async function loadJSONData() {
+                try {
+                    const response = await fetch('productos.json');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const jsonData = await response.json();
+                    return jsonData;
+                } catch (error) {
+                    console.error('Error al cargar o parsear el JSON:', error);
+                    productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos JSON. Asegúrate de que el archivo productos.json existe.</p>';
+                    return null;
+                }
+            }
 
-            if (filtrados.length === 0) {
-                datosHTML = '<p>No hay productos de esta categoría.</p>';
-            } else {
-                filtrados.forEach(product => {
-                    datosHTML += `<div class="product-item">`;
-                    datosHTML += `<p><strong>Nombre:</strong> ${product.nombre}</p>`;
-                    datosHTML += `<p><strong>Precio:</strong> ${product.precio.toFixed(2)} €</p>`;
-                    if (product.peso) datosHTML += `<p><strong>Peso:</strong> ${product.peso} kg</p>`;
-                    if (product.volumen) datosHTML += `<p><strong>Volumen:</strong> ${product.volumen} L</p>`;
-                    if (product.caducidad) datosHTML += `<p><strong>Caducidad:</strong> ${product.caducidad}</p>`;
-                    datosHTML += `</div>`;
+            // Función para mostrar los productos
+            function displayProducts(products) {
+                productosContainer.innerHTML = ''; // Limpiar el contenido anterior
+
+                if (products.length === 0) {
+                    productosContainer.innerHTML = '<p>No se encontraron productos para esta categoría.</p>';
+                    return;
+                }
+
+                products.forEach(product => {
+                    const productItem = document.createElement('div');
+                    productItem.classList.add('product-item');
+
+                    let details = `<p><strong>Nombre:</strong> ${product.nombre}</p>`;
+                    details += `<p><strong>Precio:</strong> ${product.precio.toFixed(2)} €</p>`;
+
+                    if (product.peso) {
+                        details += `<p><strong>Peso:</strong> ${product.peso} kg</p>`;
+                    }
+                    if (product.volumen) {
+                        details += `<p><strong>Volumen:</strong> ${product.volumen} L</p>`;
+                    }
+                    if (product.caducidad) {
+                        details += `<p><strong>Caducidad:</strong> ${product.caducidad}</p>`;
+                    }
+                    
+                    productItem.innerHTML = details;
+                    productosContainer.appendChild(productItem);
                 });
             }
 
-            productosContainer.innerHTML = datosHTML;
-        }
+            // Event listener para el botón "Seleccionar"
+            seleccionarBtn.addEventListener('click', async () => {
+                const categoriaSeleccionada = categoriaSelect.value;
+                let allProducts = [];
+
+                // Primero, intentar cargar de JSON
+                const jsonData = await loadJSONData();
+                if (jsonData) {
+                    allProducts = allProducts.concat(jsonData);
+                }
+
+                // Luego, cargar de XML y añadir a la lista. Hay que transformar el XML a un formato similar al JSON
+                const xmlDoc = await loadXMLData();
+                if (xmlDoc) {
+                    const xmlProducts = Array.from(xmlDoc.querySelectorAll('producto')).map(productElement => {
+                        const categoria = productElement.getAttribute('categoria');
+                        const nombre = productElement.querySelector('nombre')?.textContent || '';
+                        const peso = parseFloat(productElement.querySelector('peso')?.textContent) || null;
+                        const volumen = parseFloat(productElement.querySelector('volumen')?.textContent) || null;
+                        const precio = parseFloat(productElement.querySelector('precio')?.textContent) || 0;
+                        const caducidad = productElement.querySelector('caducidad')?.textContent || null;
+
+                        return { categoria, nombre, peso, volumen, precio, caducidad };
+                    });
+                    allProducts = allProducts.concat(xmlProducts);
+                }
+
+                // Filtrar productos únicos y por categoría
+                // Se usa un Set para evitar duplicados si los datos existen en ambos formatos con las mismas propiedades clave
+                const uniqueProductsMap = new Map();
+                allProducts.forEach(product => {
+                    const key = `${product.categoria}-${product.nombre}-${product.precio}`; // Usar una clave única
+                    if (!uniqueProductsMap.has(key)) {
+                        uniqueProductsMap.set(key, product);
+                    }
+                });
+                
+                const filteredProducts = Array.from(uniqueProductsMap.values()).filter(product => {
+                    return product.categoria === categoriaSeleccionada;
+                });
+
+                displayProducts(filteredProducts);
+            });
+        });
     </script>
 </body>
 </html>
