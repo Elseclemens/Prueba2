@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supermercado Alba</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <h1>Análisis de Productos por Categoría</h1>
+    <p>Selecciona para ver los productos disponibles.</p>
+
+    <label for="opciones">Selecciona una categoría:</label>
+    <select id="opciones">
+        <option value="Congelados">Congelados</option>
+        <option value="Fruta">Fruta</option>
+        <option value="Verdura">Verduras</option> 
+        <option value="Bebidas">Bebidas</option>
+    </select>
+    <button onclick="mostrarSeleccion()">Seleccionar</button>
+
+    <p id="resultado">Seleccionado: Nada</p>
+
+    <div id="productosContainer">
+        <p>No hay datos cargados todavía.</p>
+    </div>
+
+    <script>
+        async function mostrarSeleccion() {
+            const categoriaSeleccionada = document.getElementById('opciones').value;
+            document.getElementById('resultado').textContent = "Seleccionado: " + categoriaSeleccionada;
+
+            const productosContainer = document.getElementById('productosContainer');
+            let datosHTML = '';
+            let productos = [];
+
+            try {
+                const responseXML = await fetch('productos.xml');
+                    if (!responseXML.ok)
+                        throw new Error("Error al cargar el archivo XML");
+                const xmlText = await responseXML.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+                productos = Array.from(xmlDoc.querySelectorAll('producto')).map(productElement => ({
+                    categoria: productElement.getAttribute('categoria'),
+                    nombre: productElement.querySelector('nombre')?.textContent || '',
+                    peso: parseFloat(productElement.querySelector('peso')?.textContent) || null,
+                    volumen: parseFloat(productElement.querySelector('volumen')?.textContent) || null,
+                    precio: parseFloat(productElement.querySelector('precio')?.textContent) || 0,
+                    caducidad: productElement.querySelector('caducidad')?.textContent || null
+                }));
+            } catch (error) {
+                console.error('Error al cargar o parsear el XML:', error);
+                productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos XML.</p>';
+                return;
+            }
+
+            const filtrados = productos.filter(p => p.categoria === categoriaSeleccionada);
+
+            if (filtrados.length === 0) {
+                datosHTML = '<p>No hay productos de esta categoría.</p>';
+            } else {
+                filtrados.forEach(product => {
+                    datosHTML += `<div class="product-item">`;
+                    datosHTML += `<p><strong>Nombre:</strong> ${product.nombre}</p>`;
+                    datosHTML += `<p><strong>Precio:</strong> ${product.precio.toFixed(2)} €</p>`;
+                    if (product.peso) datosHTML += `<p><strong>Peso:</strong> ${product.peso} kg</p>`;
+                    if (product.volumen) datosHTML += `<p><strong>Volumen:</strong> ${product.volumen} L</p>`;
+                    if (product.caducidad) datosHTML += `<p><strong>Caducidad:</strong> ${product.caducidad}</p>`;
+                    datosHTML += `</div>`;
+                });
+            }
+
+            productosContainer.innerHTML = datosHTML;
+        }
+    </script>
+</body>
+</html>
