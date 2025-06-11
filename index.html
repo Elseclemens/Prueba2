@@ -36,7 +36,7 @@
             const seleccionarBtn = document.getElementById('seleccionarBtn');
             const productosContainer = document.getElementById('productosContainer');
 
-            // Función para cargar y procesar datos XML
+            // Esto carga el XML
             async function loadXMLData() {
                 try {
                     const response = await fetch('productos.xml');
@@ -54,7 +54,7 @@
                 }
             }
 
-            // Función para cargar y procesar datos JSON
+            // Esto carga el JSON
             async function loadJSONData() {
                 try {
                     const response = await fetch('productos.json');
@@ -64,18 +64,18 @@
                     const jsonData = await response.json();
                     return jsonData;
                 } catch (error) {
-                    console.error('Error al cargar o parsear el JSON:', error);
+                    console.error('Error al cargar el JSON:', error);
                     productosContainer.innerHTML = '<p style="color: red;">Error al cargar los datos JSON. Asegúrate de que el archivo productos.json existe.</p>';
                     return null;
                 }
             }
 
-            // Función para mostrar los productos
+            // Esto muestra los productos
             function displayProducts(products) {
-                productosContainer.innerHTML = ''; // Limpiar el contenido anterior
+                productosContainer.innerHTML = '';
 
                 if (products.length === 0) {
-                    productosContainer.innerHTML = '<p>No se encontraron productos para esta categoría.</p>';
+                    productosContainer.innerHTML = '<p>No hay productos para esta categoría.</p>';
                     return;
                 }
 
@@ -101,30 +101,45 @@
                 });
             }
 
-             // El botón "Seleccionar"
+            // El botón de Seleccionar
             seleccionarBtn.addEventListener('click', async () => {
                 const categoriaSeleccionada = categoriaSelect.value;
                 let allProducts = [];
 
+                // Se carga el JSON
                 const jsonData = await loadJSONData();
                 if (jsonData) {
                     allProducts = allProducts.concat(jsonData);
                 }
 
+                // Se carga el XML
                 const xmlDoc = await loadXMLData();
                 if (xmlDoc) {
                     const xmlProducts = Array.from(xmlDoc.querySelectorAll('producto')).map(productElement => {
-                        const categoria = productElement.getAttribute('categoria');
-                        const nombre = productElement.querySelector('nombre')?.textContent || '';
+                        const categoria = productElement.getAttribute('categoria') || ''; 
+                        const nombre = productElement.querySelector('nombre')?.textContent || ''; 
                         const peso = parseFloat(productElement.querySelector('peso')?.textContent) || null;
                         const volumen = parseFloat(productElement.querySelector('volumen')?.textContent) || null;
                         const precio = parseFloat(productElement.querySelector('precio')?.textContent) || 0;
-                        const caducidad = productElement.querySelector('caducidad')?.textContent || null;
+                        const caducidad = productElement.querySelector('caducidad')?.textContent || null; 
 
                         return { categoria, nombre, peso, volumen, precio, caducidad };
                     });
                     allProducts = allProducts.concat(xmlProducts);
                 }
+                
+                const uniqueProductsMap = new Map();
+                allProducts.forEach(product => {
+                    const key = `${product.categoria}-${product.nombre}-${product.precio}`;
+                    if (!uniqueProductsMap.has(key)) {
+                        uniqueProductsMap.set(key, product);
+                    }
+                });
+                
+                const filteredProducts = Array.from(uniqueProductsMap.values()).filter(product => {
+                    return product.categoria === categoriaSeleccionada;
+                });
+                displayProducts(filteredProducts);
             });
         });
     </script>
