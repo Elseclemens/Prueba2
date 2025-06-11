@@ -101,18 +101,16 @@
                 });
             }
 
-            // Event listener para el botón "Seleccionar"
+             // El botón "Seleccionar"
             seleccionarBtn.addEventListener('click', async () => {
                 const categoriaSeleccionada = categoriaSelect.value;
                 let allProducts = [];
 
-                // Primero, intentar cargar de JSON
                 const jsonData = await loadJSONData();
                 if (jsonData) {
                     allProducts = allProducts.concat(jsonData);
                 }
 
-                // Luego, cargar de XML y añadir a la lista. Hay que transformar el XML a un formato similar al JSON
                 const xmlDoc = await loadXMLData();
                 if (xmlDoc) {
                     const xmlProducts = Array.from(xmlDoc.querySelectorAll('producto')).map(productElement => {
@@ -127,22 +125,6 @@
                     });
                     allProducts = allProducts.concat(xmlProducts);
                 }
-
-                // Filtrar productos únicos y por categoría
-                // Se usa un Set para evitar duplicados si los datos existen en ambos formatos con las mismas propiedades clave
-                const uniqueProductsMap = new Map();
-                allProducts.forEach(product => {
-                    const key = `${product.categoria}-${product.nombre}-${product.precio}`; // Usar una clave única
-                    if (!uniqueProductsMap.has(key)) {
-                        uniqueProductsMap.set(key, product);
-                    }
-                });
-                
-                const filteredProducts = Array.from(uniqueProductsMap.values()).filter(product => {
-                    return product.categoria === categoriaSeleccionada;
-                });
-
-                displayProducts(filteredProducts);
             });
         });
     </script>
